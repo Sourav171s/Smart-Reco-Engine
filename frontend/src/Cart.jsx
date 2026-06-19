@@ -26,13 +26,14 @@ export default function Cart() {
   };
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = 20;
-  const packagingFee = 10;
+  const freeDeliveryThreshold = 500;
+  
+  const deliveryFee = subtotal === 0 ? 0 : (subtotal >= freeDeliveryThreshold ? 0 : 20);
+  const packagingFee = subtotal === 0 ? 0 : 10;
   const total = subtotal + deliveryFee + packagingFee;
 
-  const freeDeliveryThreshold = 500;
-  const awayFromFree = Math.max(0, freeDeliveryThreshold - total);
-  const progressPercent = Math.min(100, (total / freeDeliveryThreshold) * 100);
+  const awayFromFree = Math.max(0, freeDeliveryThreshold - subtotal);
+  const progressPercent = Math.min(100, (subtotal / freeDeliveryThreshold) * 100);
 
   // Helper for generating terminal-like visual bars
   const renderLoadingBar = (percent) => {
@@ -111,7 +112,7 @@ export default function Cart() {
                     Delivery_Status
                   </Typography>
                   <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '1.25rem', color: 'var(--text-primary)' }}>
-                    ₹{total} <span style={{ color: 'var(--text-tertiary)' }}>/ ₹{freeDeliveryThreshold}</span>
+                    ₹{subtotal} <span style={{ color: 'var(--text-tertiary)' }}>/ ₹{freeDeliveryThreshold}</span>
                   </Typography>
                 </Box>
                 
@@ -129,8 +130,21 @@ export default function Cart() {
               </Box>
 
               {/* Cart Items Grid (like data cards) */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                {items.map(item => (
+              {items.length === 0 ? (
+                <Box sx={{ p: 6, border: '1px solid var(--border)', bgcolor: 'var(--bg-panel)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <Terminal size={32} color="var(--text-tertiary)" />
+                  <Box>
+                    <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.75rem', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>
+                      &gt; NO_DATA_BLOCKS_DETECTED
+                    </Typography>
+                    <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '1rem', color: 'var(--text-secondary)', mt: 1 }}>
+                      YOUR_CART_IS_EMPTY
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  {items.map(item => (
                   <Box key={item.id} sx={{ 
                     p: 2, 
                     border: '1px solid var(--border)', 
@@ -199,6 +213,7 @@ export default function Cart() {
                   </Box>
                 ))}
               </Box>
+              )}
 
             </Box>
           </Grid>
@@ -253,6 +268,7 @@ export default function Cart() {
 
                 <Button 
                   fullWidth 
+                  disabled={items.length === 0}
                   variant="text" 
                   sx={{ 
                     bgcolor: 'var(--text-primary)', 
