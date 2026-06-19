@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;700&display=swap');
+
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  
+  --bg-base: #000000;
+  --bg-panel: #0a0a0a;
+  --bg-panel-light: #121212;
+  
+  --border: #27272a;
+  --border-light: #3f3f46;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #52525b;
+  
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+
+  color-scheme: dark;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  display: block;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.8); }
+}
+
+/* HUD Corners */
+.hud-box {
+  position: relative;
+}
+.hud-box::before, .hud-box::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--text-tertiary);
+  pointer-events: none;
+}
+.hud-box-tl::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.hud-box-tr::after { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.hud-box-bl::before { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+.hud-box-br::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+/* Custom scrollbar for terminal look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base); 
+  border-left: 1px solid var(--border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light); 
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary); 
+}
