@@ -1,29 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, Typography, IconButton, Button, Container, Grid } from '@mui/material';
 import { Trash2, Plus, Minus, Lock, Terminal } from 'lucide-react';
 
-const initialItems = [
-  { id: 1, name: 'AMUL_MILK_500ML', price: 30, quantity: 2, image: 'https://via.placeholder.com/150/121212/52525b?text=DATA_BLK_1' },
-  { id: 2, name: 'NANDINI_MILK_500ML', price: 31, quantity: 1, image: 'https://via.placeholder.com/150/121212/52525b?text=DATA_BLK_2' },
-  { id: 3, name: 'LAYS_CHIPS_120G', price: 40, quantity: 1, image: 'https://via.placeholder.com/150/121212/52525b?text=DATA_BLK_3' }
-];
-
-export default function Cart() {
-  const [items, setItems] = useState(initialItems);
-
-  const updateQuantity = (id, delta) => {
-    setItems(items.map(item => {
-      if (item.id === id) {
-        const newQ = item.quantity + delta;
-        return { ...item, quantity: newQ > 0 ? newQ : 1 };
-      }
-      return item;
-    }));
-  };
-
-  const removeItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
-  };
+export default function Cart({ items, updateQuantity, removeItem }) {
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const freeDeliveryThreshold = 500;
@@ -62,22 +41,6 @@ export default function Cart() {
       color: 'var(--text-primary)',
     }}>
       <Container maxWidth="lg">
-        
-        {/* Top Header / Nav Bar Simulation */}
-        <Box sx={{ 
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-          borderBottom: '1px solid var(--border)', pb: 2, mb: 6,
-          fontFamily: 'var(--mono)', fontSize: '0.75rem', letterSpacing: '0.1em', color: 'var(--text-secondary)', textTransform: 'uppercase'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-primary)' }}>
-              <Box sx={{ width: 8, height: 8, bgcolor: 'var(--text-primary)' }} />
-              <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.15em' }}>
-                OVERWATCH_CART
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
 
         {/* Page Title */}
         <Box sx={{ mb: 6, maxWidth: 600 }}>
