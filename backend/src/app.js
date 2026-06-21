@@ -4,16 +4,20 @@ import dotenv from "dotenv";
 
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorHandler.js";
+import productRoutes from "./routes/productRoutes.js";
 
 dotenv.config();
 
 connectDB();
 
-const app = express();
+const app = express();                //Creates the Express "app" object and Think of this as the engine of your server.
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+//for products
+app.use("/api/products",productRoutes);
 
 // Health Check Route
 app.get("/", (req, res) => {
