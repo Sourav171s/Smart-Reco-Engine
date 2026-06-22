@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { Box, Typography, Container } from '@mui/material';
-import { Database, Package, ShoppingCart } from 'lucide-react';
+import { Database, Package, ShoppingCart, Store } from 'lucide-react';
 import Cart from './Cart';
 import ProductCatalog from './ProductCatalog';
 import Inventory from './Inventory';
+import CustomerShopping from './CustomerShopping';
 
 function NavBar({ cartCount }) {
   const location = useLocation();
@@ -12,6 +13,7 @@ function NavBar({ cartCount }) {
   const links = [
     { to: '/', label: 'CATALOG', icon: <Database size={14} /> },
     { to: '/inventory', label: 'INVENTORY', icon: <Package size={14} /> },
+    { to: '/shop', label: 'SHOP', icon: <Store size={14} /> },
     { to: '/cart', label: 'CART', icon: <ShoppingCart size={14} />, badge: cartCount },
   ];
 
@@ -115,6 +117,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ProductCatalog addToCart={addToCart} />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/shop" element={<CustomerShopping addToCart={addToCart} />} />
         <Route path="/cart" element={<Cart items={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} />} />
       </Routes>
     </BrowserRouter>
