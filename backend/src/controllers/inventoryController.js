@@ -22,12 +22,14 @@ export const createInventory = async (req,res,next) => {
         }
 
         const inventory= await Inventory.create({productId,availableQuantity});
-        const populateInventory = await inventory.populate("productId");
+        //Fetch the newly created record fresh from the database 
+        // with the populated data. This ensures 100% data integrity.
+        const populatedInventory = await Inventory.findById(inventory._id).populate("productId");
 
         res.status(201).json({
             success : true,
             message: "Inventory record created successfully",
-            data : populateInventory,
+            data : populatedInventory,
         })
     } catch (error) {
         next(error);
@@ -41,7 +43,7 @@ export const getInventory = async (req,res,next) => {
     try {
         const inventoryList = await Inventory.find()
             .populate("productId")
-            .sort({createdAt : -1});
+            .sort({updatedAt : -1});
 
         res.status(200).json({
             success: true,

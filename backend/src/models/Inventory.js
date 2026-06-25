@@ -72,6 +72,10 @@ const inventorySchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Available quantity is required'],
       min: [0, 'Quantity cannot be negative'],
+      validate: {
+        validator: Number.isInteger,
+        message: 'Available quantity must be a whole number',
+      },
       default: 0,
     },
   },

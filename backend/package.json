@@ -6,17 +6,17 @@
   "scripts": {
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
-    "seed": "node src/seed/seed.js"              
+    "seed": "node seed/seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mogodb": "^0.0.1-security",
     "mongoose": "^9.7.0"
   },
   "devDependencies": {

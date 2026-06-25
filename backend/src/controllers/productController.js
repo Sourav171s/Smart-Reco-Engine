@@ -1,5 +1,7 @@
 //firstly using the Product modal
 import Product from "../models/Product.js"
+import Inventory from "../models/Inventory.js";
+import Recommendation from "../models/Recommendation.js";
 
 //Create Product on->  POST /api/products
 export const createProduct = async (req,res,next) =>{
@@ -85,18 +87,37 @@ export const updateProduct = async (req,res,next) => {
 // DELETE PRODUCT
 // DELETE /api/products/:id
 // =====================================================
+// DELETE PRODUCT
+// DELETE /api/products/:id
 export const deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const productId = req.params.id;
+
+    // 1. Delete the product itself
+    const product = await Product.findByIdAndDelete(productId);
 
     if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
 
+    // 2. CASCADE DELETE: Clean up orphaned records
+    // This ensures no "ghost" data exists for a deleted product
+    
+    // Delete related inventory record
+    await Inventory.deleteMany({ productId: productId });
+    
+    // Delete all recommendations where this product was either the source or the target
+    await Recommendation.deleteMany({
+      $or: [
+        { sourceProductId: productId },
+        { recommendedProductId: productId }
+      ]
+    });
+
     res.status(200).json({
       success: true,
-      message: "Product deleted successfully",
+      message: "Product and all related inventory/recommendation records deleted successfully",
     });
   } catch (error) {
     next(error);
