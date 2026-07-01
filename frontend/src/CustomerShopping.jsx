@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Typography, Container, Grid, Dialog, DialogContent, IconButton } from '@mui/material';
+import { Box, Typography, Container, Grid, Dialog, DialogContent, IconButton, Badge } from '@mui/material';
 import { Search, ShoppingCart, Star, X, Zap } from 'lucide-react';
 
 const allProducts = [
@@ -13,7 +13,26 @@ const allProducts = [
 
 export default function CustomerShopping({ addToCart }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [priceRange, setPriceRange] = useState(100);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const categories = useMemo(() => {
+    const cats = [...new Set(allProducts.map(p => p.category))];
+    return cats.map(c => ({ name: c, count: allProducts.filter(p => p.category === c).length }));
+  }, []);
+
+  const filtered = useMemo(() => {
+    let result = allProducts;
+    if (activeCategory !== 'All') result = result.filter(p => p.category === activeCategory);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q));
+    }
+    result = result.filter(p => p.price <= priceRange);
+    return result;
+  }, [activeCategory, searchQuery, priceRange]);
+
   const getBadgeClass = (badge) => {
     if (badge === 'Hot') return 'badge-hot';
     if (badge === 'Sale') return 'badge-sale';
@@ -55,42 +74,103 @@ export default function CustomerShopping({ addToCart }) {
         <Typography sx={{ color: 'var(--text-secondary)' }}>Click on any product to see our AI recommendation engine in action.</Typography>
       </Box>
 
-      <Grid container spacing={3}>
-        {allProducts.map(product => (
-          <Grid item xs={12} sm={6} md={4} lg={3} xl={2.4} key={product.id}>
-            <Box className="product-card fade-in" onClick={() => setSelectedProduct(product)}>
-              {product.badge && <Box className={`badge ${getBadgeClass(product.badge)}`}>{product.badge}</Box>}
-              
-              {product.image ? (
-                <img src={product.image} alt={product.name} style={{ width: '100%', height: 180, objectFit: 'contain', marginBottom: 12 }} />
-              ) : (
-                <Box className="img-placeholder" />
-              )}
+      {/* Top Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          We found <strong style={{ color: 'var(--green)' }}>{filtered.length}</strong> items for you!
+        </Typography>
+        <Box sx={{ border: '1px solid var(--border)', borderRadius: '4px', px: 2, py: 1, display: 'flex', alignItems: 'center', bgcolor: 'var(--bg-white)' }}>
+          <Search size={16} color="var(--text-light)" style={{ marginRight: 8 }} />
+          <input 
+            type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.9rem', color: 'var(--text-primary)', fontFamily: 'Inter' }}
+          />
+        </Box>
+      </Box>
 
-              <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 0.5 }}>{product.category}</Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', mb: 1, lineHeight: 1.3 }}>{product.name}</Typography>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                <Star size={14} className="star-filled" fill="currentColor" />
-                <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>({product.rating})</Typography>
-              </Box>
-              
-              <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 2 }}>
-                By <span style={{ color: 'var(--green)' }}>{product.brand}</span>
-              </Typography>
+      <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+        {/* Product Grid */}
+        <Box sx={{ flex: 3 }}>
+          <Grid container spacing={3}>
+            {filtered.map(product => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                <Box className="product-card fade-in" onClick={() => setSelectedProduct(product)}>
+                  {product.badge && <Box className={`badge ${getBadgeClass(product.badge)}`}>{product.badge}</Box>}
+                  
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} style={{ width: '100%', height: 180, objectFit: 'contain', marginBottom: 12 }} />
+                  ) : (
+                    <Box className="img-placeholder" />
+                  )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--green)', lineHeight: 1 }}>₹{product.price}</Typography>
+                  <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 0.5 }}>{product.category}</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', mb: 1, lineHeight: 1.3 }}>{product.name}</Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <Star size={14} className="star-filled" fill="currentColor" />
+                    <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>({product.rating})</Typography>
+                  </Box>
+                  
+                  <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 2 }}>
+                    By <span style={{ color: 'var(--green)' }}>{product.brand}</span>
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--green)', lineHeight: 1 }}>₹{product.price}</Typography>
+                    </Box>
+                    <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px' }} onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
+                      <ShoppingCart size={14} /> Add
+                    </button>
+                  </Box>
                 </Box>
-                <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px' }} onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
-                  <ShoppingCart size={14} /> Add
-                </button>
-              </Box>
-            </Box>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+          {filtered.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 10 }}>
+              <Typography sx={{ color: 'var(--text-secondary)' }}>No products found matching your filters.</Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Right Sidebar Filters */}
+        <Box sx={{ flex: 1, minWidth: 260 }}>
+          {/* Category Filter */}
+          <Box className="filter-card">
+            <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', mb: 2, pb: 2, borderBottom: '1px solid var(--border)' }}>Category</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box 
+                sx={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', p: 1, borderRadius: '6px', border: '1px solid', borderColor: activeCategory === 'All' ? 'var(--green)' : 'transparent', bgcolor: activeCategory === 'All' ? 'var(--green-light)' : 'transparent', '&:hover': { bgcolor: 'var(--bg-base)' } }}
+                onClick={() => setActiveCategory('All')}
+              >
+                <Typography sx={{ fontSize: '0.9rem', color: activeCategory === 'All' ? 'var(--green)' : 'var(--text-primary)' }}>All Categories</Typography>
+                <Badge badgeContent={allProducts.length} sx={{ '& .MuiBadge-badge': { bgcolor: 'var(--green-light)', color: 'var(--green)' }, position: 'relative', transform: 'none' }} />
+              </Box>
+              {categories.map(cat => (
+                <Box 
+                  key={cat.name}
+                  sx={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', p: 1, borderRadius: '6px', border: '1px solid', borderColor: activeCategory === cat.name ? 'var(--green)' : 'transparent', bgcolor: activeCategory === cat.name ? 'var(--green-light)' : 'transparent', '&:hover': { bgcolor: 'var(--bg-base)' } }}
+                  onClick={() => setActiveCategory(cat.name)}
+                >
+                  <Typography sx={{ fontSize: '0.9rem', color: activeCategory === cat.name ? 'var(--green)' : 'var(--text-primary)' }}>{cat.name}</Typography>
+                  <Badge badgeContent={cat.count} sx={{ '& .MuiBadge-badge': { bgcolor: 'var(--bg-base)', color: 'var(--text-secondary)' }, position: 'relative', transform: 'none' }} />
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Price Filter */}
+          <Box className="filter-card">
+            <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', mb: 2, pb: 2, borderBottom: '1px solid var(--border)' }}>Filter by Price</Typography>
+            <input type="range" min="0" max="500" value={priceRange} onChange={(e) => setPriceRange(Number(e.target.value))} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>From: <span style={{ color: 'var(--green)', fontWeight: 600 }}>₹0</span></Typography>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>To: <span style={{ color: 'var(--green)', fontWeight: 600 }}>₹{priceRange}</span></Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Smart Recommendation Modal */}
       <Dialog open={!!selectedProduct} onClose={() => setSelectedProduct(null)} maxWidth="md" fullWidth>
