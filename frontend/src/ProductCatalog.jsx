@@ -1,447 +1,292 @@
-import React, { useState } from 'react';
-import { Box, Typography, IconButton, Button, Container, Dialog, DialogContent } from '@mui/material';
-import { Search, SlidersHorizontal, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Star, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Box, Typography, Container, Grid, Dialog, DialogContent, IconButton, Badge } from '@mui/material';
+import { Search, Plus, Pencil, Trash2, X, Star, ShoppingCart } from 'lucide-react';
 
-const allProducts = [
-  { id: 1, name: 'Amul Milk 500ml', brand: 'Amul', category: 'Dairy', price: 30, rating: 4.5, stock: 120, sku: 'DRY-001' },
-  { id: 2, name: 'Nandini Milk 500ml', brand: 'Nandini', category: 'Dairy', price: 31, rating: 4.3, stock: 90, sku: 'DRY-002' },
-  { id: 3, name: 'Heritage Milk 500ml', brand: 'Heritage', category: 'Dairy', price: 35, rating: 4.1, stock: 50, sku: 'DRY-003' },
-  { id: 4, name: "Lay's Chips Classic 120g", brand: "Lay's", category: 'Snacks', price: 40, rating: 4.2, stock: 200, sku: 'SNK-001' },
-  { id: 5, name: 'Maggi Noodles 280g', brand: 'Maggi', category: 'Instant', price: 56, rating: 4.7, stock: 340, sku: 'INS-001' },
-  { id: 6, name: 'Britannia Bread 400g', brand: 'Britannia', category: 'Bakery', price: 45, rating: 4.0, stock: 60, sku: 'BKR-001' },
-  { id: 7, name: 'Tata Tea 250g', brand: 'Tata', category: 'Beverages', price: 120, rating: 4.8, stock: 150, sku: 'BEV-001' },
-  { id: 8, name: 'Parle-G 800g', brand: 'Parle', category: 'Snacks', price: 80, rating: 4.6, stock: 500, sku: 'SNK-002' },
-  { id: 9, name: 'Aashirvaad Atta 5kg', brand: 'Aashirvaad', category: 'Staples', price: 280, rating: 4.4, stock: 45, sku: 'STP-001' },
-  { id: 10, name: 'Surf Excel 1kg', brand: 'Surf Excel', category: 'Household', price: 195, rating: 4.1, stock: 90, sku: 'HHD-001' },
-  { id: 11, name: 'Amul Butter 500g', brand: 'Amul', category: 'Dairy', price: 270, rating: 4.9, stock: 30, sku: 'DRY-004' },
-  { id: 12, name: 'Haldiram Namkeen 400g', brand: 'Haldiram', category: 'Snacks', price: 110, rating: 4.3, stock: 175, sku: 'SNK-003' },
-  { id: 13, name: 'Nescafe Coffee 200g', brand: 'Nescafe', category: 'Beverages', price: 350, rating: 4.7, stock: 65, sku: 'BEV-002' },
-  { id: 14, name: 'Vim Dishwash 500ml', brand: 'Vim', category: 'Household', price: 99, rating: 3.9, stock: 110, sku: 'HHD-002' },
-  { id: 15, name: 'Dettol Soap 75g', brand: 'Dettol', category: 'Personal Care', price: 42, rating: 4.0, stock: 220, sku: 'PRC-001' },
-  { id: 16, name: 'Bournvita 500g', brand: 'Cadbury', category: 'Beverages', price: 230, rating: 4.5, stock: 80, sku: 'BEV-003' },
+const initialProducts = [
+  { id: 1, name: 'Amul Milk 500ml', brand: 'Amul', category: 'Dairy', price: 30, rating: 4.5, stock: 120, sku: 'DRY-001', image: '', badge: 'Hot' },
+  { id: 2, name: 'Nandini Milk 500ml', brand: 'Nandini', category: 'Dairy', price: 31, rating: 4.3, stock: 90, sku: 'DRY-002', image: '', badge: '' },
+  { id: 3, name: 'Heritage Milk 500ml', brand: 'Heritage', category: 'Dairy', price: 35, rating: 4.1, stock: 50, sku: 'DRY-003', image: '', badge: 'Sale' },
+  { id: 4, name: "Lay's Chips Classic 120g", brand: "Lay's", category: 'Snacks', price: 40, rating: 4.2, stock: 200, sku: 'SNK-001', image: '', badge: 'New' },
+  { id: 5, name: 'Maggi Noodles 280g', brand: 'Maggi', category: 'Instant', price: 56, rating: 4.7, stock: 340, sku: 'INS-001', image: '', badge: '-10%' },
+  { id: 6, name: 'Britannia Bread 400g', brand: 'Britannia', category: 'Bakery', price: 45, rating: 4.0, stock: 60, sku: 'BKR-001', image: '', badge: '' },
 ];
 
-const ITEMS_PER_PAGE = 6;
-const categories = ['All', ...new Set(allProducts.map(p => p.category))];
-
 export default function ProductCatalog() {
-  const [products, setProducts] = useState(allProducts);
+  const [products, setProducts] = useState(initialProducts);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState(100);
+  const [sortBy, setSortBy] = useState('Featured');
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({ name: '', brand: '', category: 'Dairy', customCategory: '', price: '', rating: '', stock: '', sku: '', image: '' });
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
 
-  // Form state for add/edit
-  const [formData, setFormData] = useState({ name: '', brand: '', category: 'Dairy', price: '', rating: '', stock: '', sku: '' });
+  // Derived data
+  const categories = useMemo(() => {
+    const cats = [...new Set(products.map(p => p.category))];
+    return cats.map(c => ({ name: c, count: products.filter(p => p.category === c).length }));
+  }, [products]);
 
-  const filtered = products.filter(p => {
-    const matchCat = activeCategory === 'All' || p.category === activeCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const filtered = useMemo(() => {
+    let result = products;
+    if (activeCategory !== 'All') result = result.filter(p => p.category === activeCategory);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+    }
+    result = result.filter(p => p.price <= priceRange);
+    
+    if (sortBy === 'Price: Low to High') result.sort((a,b) => a.price - b.price);
+    if (sortBy === 'Price: High to Low') result.sort((a,b) => b.price - a.price);
+    if (sortBy === 'Rating') result.sort((a,b) => b.rating - a.rating);
+    
+    return result;
+  }, [products, activeCategory, searchQuery, priceRange, sortBy]);
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handleDelete = (id) => {
-    setProducts(products.filter(p => p.id !== id));
-  };
+  const handleDelete = (id) => setProducts(products.filter(p => p.id !== id));
 
   const openEdit = (product) => {
     setEditingProduct(product);
-    setFormData({ name: product.name, brand: product.brand, category: product.category, price: product.price.toString(), rating: product.rating.toString(), stock: product.stock.toString(), sku: product.sku });
+    const hasStandardCat = categories.some(c => c.name === product.category);
+    setIsCustomCategory(!hasStandardCat);
+    setFormData({ 
+      name: product.name, brand: product.brand, 
+      category: hasStandardCat ? product.category : 'Other', customCategory: hasStandardCat ? '' : product.category,
+      price: product.price, rating: product.rating, stock: product.stock, sku: product.sku, image: product.image || '' 
+    });
     setShowAddModal(true);
   };
 
   const openAdd = () => {
     setEditingProduct(null);
-    setFormData({ name: '', brand: '', category: 'Dairy', price: '', rating: '', stock: '', sku: '' });
+    setIsCustomCategory(false);
+    setFormData({ name: '', brand: '', category: categories[0]?.name || 'Other', customCategory: '', price: '', rating: '', stock: '', sku: '', image: '' });
     setShowAddModal(true);
   };
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.brand || !formData.price) return;
+    if (!formData.name || !formData.price) return;
+    const finalCategory = isCustomCategory ? formData.customCategory : formData.category;
+    
     if (editingProduct) {
       setProducts(products.map(p => p.id === editingProduct.id ? {
-        ...p, name: formData.name, brand: formData.brand, category: formData.category,
+        ...p, name: formData.name, brand: formData.brand, category: finalCategory,
         price: parseFloat(formData.price), rating: parseFloat(formData.rating) || 0,
-        stock: parseInt(formData.stock) || 0, sku: formData.sku
+        stock: parseInt(formData.stock) || 0, sku: formData.sku, image: formData.image
       } : p));
     } else {
-      const newProduct = {
-        id: Math.max(...products.map(p => p.id)) + 1,
-        name: formData.name, brand: formData.brand, category: formData.category,
+      setProducts([...products, {
+        id: Date.now(), name: formData.name, brand: formData.brand, category: finalCategory,
         price: parseFloat(formData.price), rating: parseFloat(formData.rating) || 0,
-        stock: parseInt(formData.stock) || 0, sku: formData.sku || `NEW-${Date.now()}`
-      };
-      setProducts([...products, newProduct]);
+        stock: parseInt(formData.stock) || 0, sku: formData.sku || `NEW-${Date.now()}`, image: formData.image, badge: 'New'
+      }]);
     }
     setShowAddModal(false);
   };
 
-  const inputStyle = {
-    width: '100%', padding: '10px 12px',
-    background: 'var(--bg-panel-light)', border: '1px solid var(--border)',
-    color: 'var(--text-primary)', fontFamily: 'var(--mono)', fontSize: '0.8rem',
-    outline: 'none', letterSpacing: '0.03em',
-  };
-
-  const labelStyle = {
-    fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-tertiary)',
-    letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px', display: 'block'
-  };
-
-  const getStockColor = (stock) => {
-    if (stock > 100) return 'var(--accent-green)';
-    if (stock > 30) return 'var(--text-secondary)';
-    return 'var(--accent-red)';
+  const getBadgeClass = (badge) => {
+    if (badge === 'Hot') return 'badge-hot';
+    if (badge === 'Sale') return 'badge-sale';
+    if (badge === 'New') return 'badge-new';
+    return 'badge-discount';
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', py: { xs: 4, md: 8 }, color: 'var(--text-primary)' }}>
-      <Container maxWidth="lg">
-
-        {/* Page Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 5 }}>
-          <Box>
-            <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-tertiary)', letterSpacing: '0.3em', mb: 1, textTransform: 'uppercase' }}>
-              Admin Panel
-            </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 300, letterSpacing: '-0.05em', display: 'flex', alignItems: 'center' }}>
-              Product_Catalog<span className="blink" style={{ color: 'var(--text-tertiary)', marginLeft: '4px' }}>_</span>
-            </Typography>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Top Controls Row */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          We found <strong style={{ color: 'var(--green)' }}>{filtered.length}</strong> items for you!
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ border: '1px solid var(--border)', borderRadius: '4px', px: 2, py: 1, display: 'flex', alignItems: 'center', bgcolor: 'var(--bg-white)' }}>
+            <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mr: 1 }}>Sort by:</Typography>
+            <select style={{ border: 'none', outline: 'none', background: 'transparent', fontWeight: 600, color: 'var(--text-primary)' }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option>Featured</option>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+              <option>Rating</option>
+            </select>
           </Box>
-          <Button
-            onClick={openAdd}
-            sx={{
-              bgcolor: 'var(--text-primary)', color: 'var(--bg-base)',
-              borderRadius: 0, px: 3, py: 1.5,
-              fontFamily: 'var(--mono)', fontSize: '0.75rem', fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              display: 'flex', alignItems: 'center', gap: 1,
-              '&:hover': { bgcolor: 'var(--text-secondary)' },
-            }}
-          >
-            <Plus size={16} />
-            Add Product
-          </Button>
+          <button className="btn-green" onClick={openAdd}><Plus size={16} /> Add Product</button>
         </Box>
+      </Box>
 
-        {/* Search & Filters Bar */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 4, flexDirection: { xs: 'column', md: 'row' } }}>
-          <Box sx={{
-            flex: 1, display: 'flex', alignItems: 'center', gap: 1.5,
-            border: '1px solid var(--border)', bgcolor: 'var(--bg-panel)', px: 2, py: 1.5,
-            '&:focus-within': { borderColor: 'var(--border-light)' }
-          }}>
-            <Search size={16} color="var(--text-tertiary)" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              style={{
-                flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                color: 'var(--text-primary)', fontFamily: 'var(--mono)', fontSize: '0.8rem',
-                letterSpacing: '0.03em'
-              }}
-            />
-          </Box>
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            sx={{
-              border: '1px solid var(--border)', borderRadius: 0, px: 3, py: 1.5,
-              fontFamily: 'var(--mono)', fontSize: '0.75rem', letterSpacing: '0.1em',
-              color: showFilters ? 'var(--bg-base)' : 'var(--text-secondary)',
-              bgcolor: showFilters ? 'var(--text-primary)' : 'transparent',
-              textTransform: 'uppercase',
-              display: 'flex', alignItems: 'center', gap: 1,
-              '&:hover': { borderColor: 'var(--border-light)', color: showFilters ? 'var(--bg-base)' : 'var(--text-primary)' }
-            }}
-          >
-            <SlidersHorizontal size={14} />
-            Filters
-          </Button>
-        </Box>
-
-        {/* Filter Chips (collapsible) */}
-        {showFilters && (
-          <Box sx={{ display: 'flex', gap: 1, mb: 4, flexWrap: 'wrap', p: 3, border: '1px solid var(--border)', bgcolor: 'var(--bg-panel)' }}>
-            <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-tertiary)', letterSpacing: '0.1em', mr: 2, alignSelf: 'center' }}>
-              CATEGORY:
-            </Typography>
-            {categories.map(cat => (
-              <Box
-                key={cat}
-                onClick={() => { setActiveCategory(cat); setCurrentPage(1); }}
-                sx={{
-                  px: 2, py: 0.8,
-                  border: '1px solid',
-                  borderColor: activeCategory === cat ? 'var(--text-primary)' : 'var(--border)',
-                  bgcolor: activeCategory === cat ? 'var(--text-primary)' : 'transparent',
-                  color: activeCategory === cat ? 'var(--bg-base)' : 'var(--text-secondary)',
-                  fontFamily: 'var(--mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                  cursor: 'pointer', textTransform: 'uppercase',
-                  transition: 'all 0.15s',
-                  '&:hover': { borderColor: 'var(--border-light)', color: activeCategory === cat ? 'var(--bg-base)' : 'var(--text-primary)' }
-                }}
-              >
-                {cat}
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        {/* Product Table */}
-        <Box sx={{ border: '1px solid var(--border)', bgcolor: 'var(--bg-panel)', overflow: 'hidden' }}>
-          {/* Table Header */}
-          <Box sx={{
-            display: { xs: 'none', md: 'grid' },
-            gridTemplateColumns: '2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr',
-            gap: 2, px: 3, py: 2,
-            borderBottom: '1px solid var(--border)', bgcolor: 'var(--bg-panel-light)',
-            color: 'var(--text-tertiary)',
-          }}>
-            {['Product Name', 'Brand', 'Category', 'Price', 'Rating', 'Stock', 'Actions'].map(h => (
-              <Typography key={h} sx={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: h === 'Actions' ? 'right' : 'left' }}>
-                {h}
-              </Typography>
-            ))}
-          </Box>
-
-          {/* Table Rows */}
-          {paginated.length === 0 ? (
-            <Box sx={{ p: 6, textAlign: 'center' }}>
-              <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                &gt; NO_RECORDS_FOUND
-              </Typography>
-            </Box>
-          ) : (
-            paginated.map((product, index) => (
-              <Box key={product.id} sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr' },
-                gap: 2, px: 3, py: 2.5,
-                borderBottom: index < paginated.length - 1 ? '1px solid var(--border)' : 'none',
-                alignItems: 'center',
-                transition: 'background-color 0.15s',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
-              }}>
-                {/* Product Name */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{
-                    width: 40, height: 40, border: '1px solid var(--border)',
-                    bgcolor: 'var(--bg-panel-light)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--mono)', fontSize: '0.5rem', color: 'var(--text-tertiary)',
-                    flexShrink: 0
-                  }}>
-                    {product.sku.substring(0, 3)}
+      <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+        {/* Main Grid */}
+        <Box sx={{ flex: 3 }}>
+          <Grid container spacing={3}>
+            {filtered.map((product, idx) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                <Box className="product-card fade-in">
+                  {product.badge && <Box className={`badge ${getBadgeClass(product.badge)}`}>{product.badge}</Box>}
+                  
+                  {/* Action overlay for admin */}
+                  <Box sx={{ position: 'absolute', top: 12, right: -40, display: 'flex', flexDirection: 'column', gap: 1, transition: 'all 0.3s', opacity: 0 }} className="card-actions">
+                    <IconButton size="small" sx={{ bgcolor: 'var(--green-light)', color: 'var(--green)', '&:hover':{bgcolor:'var(--green)', color:'white'} }} onClick={(e) => { e.stopPropagation(); openEdit(product); }}><Pencil size={14} /></IconButton>
+                    <IconButton size="small" sx={{ bgcolor: '#ffe1e1', color: 'var(--red)', '&:hover':{bgcolor:'var(--red)', color:'white'} }} onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }}><Trash2 size={14} /></IconButton>
                   </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                      {product.name}
-                    </Typography>
-                    <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.6rem', color: 'var(--text-tertiary)', mt: 0.5, display: { xs: 'block', md: 'none' } }}>
-                      {product.brand} · {product.category} · ₹{product.price}
-                    </Typography>
+
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} style={{ width: '100%', height: 180, objectFit: 'contain', marginBottom: 12 }} />
+                  ) : (
+                    <Box className="img-placeholder" />
+                  )}
+
+                  <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 0.5 }}>{product.category}</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', mb: 1, lineHeight: 1.3 }}>{product.name}</Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                    <Star size={14} className="star-filled" fill="currentColor" />
+                    <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>({product.rating})</Typography>
                   </Box>
-                </Box>
-
-                {/* Brand */}
-                <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: { xs: 'none', md: 'block' } }}>
-                  {product.brand}
-                </Typography>
-
-                {/* Category */}
-                <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: { xs: 'none', md: 'block' } }}>
-                  {product.category}
-                </Typography>
-
-                {/* Price */}
-                <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.875rem', display: { xs: 'none', md: 'block' } }}>
-                  ₹{product.price}
-                </Typography>
-
-                {/* Rating */}
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
-                  <Star size={12} color="var(--text-secondary)" fill="var(--text-secondary)" />
-                  <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    {product.rating}
+                  
+                  <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-light)', mb: 2 }}>
+                    By <span style={{ color: 'var(--green)' }}>{product.brand}</span>
                   </Typography>
-                </Box>
 
-                {/* Stock */}
-                <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.875rem', color: getStockColor(product.stock), fontWeight: 600, display: { xs: 'none', md: 'block' } }}>
-                  {product.stock}
-                </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--green)', lineHeight: 1 }}>₹{product.price}</Typography>
+                      {product.badge === 'Sale' && <Typography sx={{ fontSize: '0.8rem', color: 'var(--text-light)', textDecoration: 'line-through' }}>₹{Math.round(product.price * 1.2)}</Typography>}
+                    </Box>
+                    <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px' }}>
+                      <ShoppingCart size={14} /> Add
+                    </button>
+                  </Box>
 
-                {/* Actions */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => openEdit(product)}
-                    sx={{ border: '1px solid var(--border)', borderRadius: 0, width: 30, height: 30, color: 'var(--text-secondary)', '&:hover': { bgcolor: 'var(--border)', color: 'var(--text-primary)' } }}
-                  >
-                    <Pencil size={14} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(product.id)}
-                    sx={{ border: '1px solid var(--border)', borderRadius: 0, width: 30, height: 30, color: 'var(--text-secondary)', '&:hover': { bgcolor: 'var(--accent-red)', borderColor: 'var(--accent-red)', color: '#fff' } }}
-                  >
-                    <Trash2 size={14} />
-                  </IconButton>
+                  <style>{`
+                    .product-card:hover .card-actions { right: 12px; opacity: 1; }
+                  `}</style>
                 </Box>
-              </Box>
-            ))
+              </Grid>
+            ))}
+          </Grid>
+          {filtered.length === 0 && (
+             <Box sx={{ textAlign: 'center', py: 10 }}>
+               <Typography sx={{ color: 'var(--text-secondary)' }}>No products found.</Typography>
+             </Box>
           )}
         </Box>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mt: 4 }}>
-            <IconButton
-              size="small"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-              sx={{ border: '1px solid var(--border)', borderRadius: 0, width: 32, height: 32, color: 'var(--text-secondary)', '&:hover': { bgcolor: 'var(--border)' }, '&.Mui-disabled': { color: 'var(--text-tertiary)', borderColor: 'var(--border)' } }}
-            >
-              <ChevronLeft size={14} />
-            </IconButton>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <Box
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                sx={{
-                  width: 32, height: 32,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1px solid',
-                  borderColor: currentPage === i + 1 ? 'var(--text-primary)' : 'var(--border)',
-                  bgcolor: currentPage === i + 1 ? 'var(--text-primary)' : 'transparent',
-                  color: currentPage === i + 1 ? 'var(--bg-base)' : 'var(--text-secondary)',
-                  fontFamily: 'var(--mono)', fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  '&:hover': { borderColor: 'var(--border-light)' }
-                }}
+        {/* Right Sidebar Filters */}
+        <Box sx={{ flex: 1, minWidth: 260 }}>
+          {/* Category Filter */}
+          <Box className="filter-card">
+            <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', mb: 2, pb: 2, borderBottom: '1px solid var(--border)' }}>Category</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box 
+                sx={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', p: 1, borderRadius: '6px', border: '1px solid', borderColor: activeCategory === 'All' ? 'var(--green)' : 'transparent', bgcolor: activeCategory === 'All' ? 'var(--green-light)' : 'transparent', '&:hover': { bgcolor: 'var(--bg-base)' } }}
+                onClick={() => setActiveCategory('All')}
               >
-                {i + 1}
+                <Typography sx={{ fontSize: '0.9rem', color: activeCategory === 'All' ? 'var(--green)' : 'var(--text-primary)' }}>All Categories</Typography>
+                <Badge badgeContent={products.length} sx={{ '& .MuiBadge-badge': { bgcolor: 'var(--green-light)', color: 'var(--green)' }, position: 'relative', transform: 'none' }} />
               </Box>
-            ))}
-            <IconButton
-              size="small"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-              sx={{ border: '1px solid var(--border)', borderRadius: 0, width: 32, height: 32, color: 'var(--text-secondary)', '&:hover': { bgcolor: 'var(--border)' }, '&.Mui-disabled': { color: 'var(--text-tertiary)', borderColor: 'var(--border)' } }}
-            >
-              <ChevronRight size={14} />
-            </IconButton>
-          </Box>
-        )}
-
-        <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'center', mt: 2 }}>
-          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} products
-        </Typography>
-
-      </Container>
-
-      {/* Add/Edit Product Modal */}
-      <Dialog
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { bgcolor: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 0, color: 'var(--text-primary)' } }}
-      >
-        <DialogContent sx={{ p: 0 }}>
-          {/* Modal Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 3, borderBottom: '1px solid var(--border)', bgcolor: 'var(--bg-panel-light)' }}>
-            <Typography sx={{ fontFamily: 'var(--mono)', fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              {editingProduct ? '> Edit_Product' : '> Add_Product'}
-            </Typography>
-            <IconButton size="small" onClick={() => setShowAddModal(false)} sx={{ color: 'var(--text-secondary)' }}>
-              <X size={18} />
-            </IconButton>
-          </Box>
-
-          {/* Modal Body */}
-          <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <Box>
-                <label style={labelStyle}>Product Name</label>
-                <input style={inputStyle} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Amul Milk 500ml" />
-              </Box>
-              <Box>
-                <label style={labelStyle}>Brand</label>
-                <input style={inputStyle} value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Amul" />
-              </Box>
-            </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <Box>
-                <label style={labelStyle}>Category</label>
-                <select
-                  style={{ ...inputStyle, cursor: 'pointer' }}
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              {categories.map(cat => (
+                <Box 
+                  key={cat.name}
+                  sx={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', p: 1, borderRadius: '6px', border: '1px solid', borderColor: activeCategory === cat.name ? 'var(--green)' : 'transparent', bgcolor: activeCategory === cat.name ? 'var(--green-light)' : 'transparent', '&:hover': { bgcolor: 'var(--bg-base)' } }}
+                  onClick={() => setActiveCategory(cat.name)}
                 >
-                  {categories.filter(c => c !== 'All').map(cat => (
-                    <option key={cat} value={cat} style={{ background: 'var(--bg-panel)' }}>{cat}</option>
-                  ))}
-                </select>
-              </Box>
-              <Box>
-                <label style={labelStyle}>SKU</label>
-                <input style={inputStyle} value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="e.g. DRY-001" />
-              </Box>
-            </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-              <Box>
-                <label style={labelStyle}>Price (₹)</label>
-                <input style={inputStyle} type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="0" />
-              </Box>
-              <Box>
-                <label style={labelStyle}>Rating</label>
-                <input style={inputStyle} type="number" step="0.1" min="0" max="5" value={formData.rating} onChange={(e) => setFormData({ ...formData, rating: e.target.value })} placeholder="0.0" />
-              </Box>
-              <Box>
-                <label style={labelStyle}>Stock</label>
-                <input style={inputStyle} type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} placeholder="0" />
-              </Box>
+                  <Typography sx={{ fontSize: '0.9rem', color: activeCategory === cat.name ? 'var(--green)' : 'var(--text-primary)' }}>{cat.name}</Typography>
+                  <Badge badgeContent={cat.count} sx={{ '& .MuiBadge-badge': { bgcolor: 'var(--bg-base)', color: 'var(--text-secondary)' }, position: 'relative', transform: 'none' }} />
+                </Box>
+              ))}
             </Box>
           </Box>
 
-          {/* Modal Footer */}
-          <Box sx={{ display: 'flex', gap: 2, p: 3, borderTop: '1px solid var(--border)', justifyContent: 'flex-end' }}>
-            <Button
-              onClick={() => setShowAddModal(false)}
-              sx={{
-                border: '1px solid var(--border)', borderRadius: 0, px: 3, py: 1,
-                fontFamily: 'var(--mono)', fontSize: '0.75rem', color: 'var(--text-secondary)',
-                textTransform: 'uppercase', letterSpacing: '0.1em',
-                '&:hover': { borderColor: 'var(--border-light)', color: 'var(--text-primary)' }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              sx={{
-                bgcolor: 'var(--text-primary)', color: 'var(--bg-base)', borderRadius: 0, px: 3, py: 1,
-                fontFamily: 'var(--mono)', fontSize: '0.75rem', fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.1em',
-                '&:hover': { bgcolor: 'var(--text-secondary)' }
-              }}
-            >
-              {editingProduct ? '> Save_Changes' : '> Add_Product'}
-            </Button>
+          {/* Price Filter */}
+          <Box className="filter-card">
+            <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', mb: 2, pb: 2, borderBottom: '1px solid var(--border)' }}>Fill by price</Typography>
+            <input type="range" min="0" max="500" value={priceRange} onChange={(e) => setPriceRange(Number(e.target.value))} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>From: <span style={{ color: 'var(--green)', fontWeight: 600 }}>₹0</span></Typography>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>To: <span style={{ color: 'var(--green)', fontWeight: 600 }}>₹{priceRange}</span></Typography>
+            </Box>
+            
+            <button className="btn-green" style={{ width: '100%', justifyContent: 'center', marginTop: 24 }} onClick={() => {}}>Filter</button>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Add / Edit Modal */}
+      <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ p: 4, bgcolor: 'var(--bg-white)', borderRadius: '12px' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography sx={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>{editingProduct ? 'Edit Product' : 'Add Product'}</Typography>
+            <IconButton onClick={() => setShowAddModal(false)}><X /></IconButton>
+          </Box>
+          
+          <Grid container spacing={2}>
+            {/* Image Upload Area */}
+            <Grid item xs={12}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Product Image (URL)</Typography>
+              {formData.image ? (
+                <Box sx={{ position: 'relative', width: 100, height: 100, mb: 1 }}>
+                  <img src={formData.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                  <IconButton size="small" sx={{ position: 'absolute', top: -10, right: -10, bgcolor: 'var(--red)', color: 'white', '&:hover':{bgcolor:'darkred'} }} onClick={() => setFormData({...formData, image: ''})}><X size={14}/></IconButton>
+                </Box>
+              ) : (
+                <input className="form-input" placeholder="https://..." value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
+              )}
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Product Name *</Typography>
+              <input className="form-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Brand *</Typography>
+              <input className="form-input" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
+            </Grid>
+            
+            {/* Dynamic Category Selection */}
+            <Grid item xs={12} sm={6}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Category</Typography>
+              <select className="form-input" value={isCustomCategory ? 'Other' : formData.category} onChange={e => {
+                if (e.target.value === 'Other') {
+                  setIsCustomCategory(true);
+                  setFormData({...formData, category: 'Other'});
+                } else {
+                  setIsCustomCategory(false);
+                  setFormData({...formData, category: e.target.value, customCategory: ''});
+                }
+              }}>
+                {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                <option value="Other">Other (Type custom...)</option>
+              </select>
+            </Grid>
+            
+            {isCustomCategory && (
+              <Grid item xs={12} sm={6}>
+                <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Custom Category Name *</Typography>
+                <input className="form-input" value={formData.customCategory} onChange={e => setFormData({...formData, customCategory: e.target.value})} placeholder="e.g. Organic Food" />
+              </Grid>
+            )}
+
+            <Grid item xs={6} sm={4}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Price (₹) *</Typography>
+              <input type="number" className="form-input" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Stock Qty</Typography>
+              <input type="number" className="form-input" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', mb: 1 }}>Rating (1-5)</Typography>
+              <input type="number" step="0.1" max="5" className="form-input" value={formData.rating} onChange={e => setFormData({...formData, rating: e.target.value})} />
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <button className="btn-outline" onClick={() => setShowAddModal(false)}>Cancel</button>
+            <button className="btn-green" onClick={handleSubmit}>{editingProduct ? 'Save Changes' : 'Add Product'}</button>
           </Box>
         </DialogContent>
       </Dialog>
-    </Box>
+    </Container>
   );
 }
