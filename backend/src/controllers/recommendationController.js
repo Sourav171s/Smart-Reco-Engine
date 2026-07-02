@@ -100,3 +100,19 @@ export const generateAndSave = async (req, res, next) => {
     return next(error);
   }
 };
+
+/**
+ * Call this from Product/Inventory controllers whenever a product's price,
+ * rating, category, or stock changes. It clears any cached recommendation
+ * where this product is either the source or the recommended item, so the
+ * NEXT view regenerates fresh data instead of every view regenerating.
+ *
+ * Example usage inside your inventory update controller:
+ *   await updateInventoryDoc(...);
+ *   await invalidateRecommendationsForProduct(inventory.productId);
+ */
+export const invalidateRecommendationsForProduct = async (productId) => {
+  await Recommendation.deleteMany({
+    $or: [{ sourceProductId: productId }, { recommendedProductId: productId }],
+  });
+};

@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import compression from "compression";
+import helmet from "helmet";
+import morgan from "morgan";
 
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorHandler.js";
@@ -16,7 +19,10 @@ const app = express();
 // Middleware
 const allowedOrigins = process.env.CLIENT_ORIGIN?.split(",").map((origin) => origin.trim());
 app.use(cors({ origin: allowedOrigins?.length ? allowedOrigins : true }));
-app.use(express.json());
+app.use(helmet());
+app.use(compression());
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(express.json({ limit: "100kb" }));
 
 // API routes consumed by the Vite frontend.
 app.use("/api/products", productRoutes);
@@ -31,6 +37,7 @@ app.get("/", (req, res) => {
     message: "Smart Recommendation Engine Backend Running",
   });
 });
+app.get("/api/health", (req, res) => res.status(200).json({ status: "ok" }));
 
 // Error Handler
 app.use((req, res, next) => {

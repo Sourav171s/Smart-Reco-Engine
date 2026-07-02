@@ -1,5 +1,6 @@
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Product.js";
+import { invalidateRecommendationsForProduct } from "./recommendationController.js";
 
 //for creating an initial record for the inventory of the proj.
 // POST /api/inventory
@@ -96,6 +97,12 @@ export const updateInventory = async (req,res,next) => {
             res.status(404)
             throw new Error("Inventory record not found");
         }
+
+        // Stock going to/from 0 flips whether this product can be
+        // recommended at all (it's a hard gate in the engine now), and any
+        // quantity change affects who else it might displace. Clear the
+        // cache so the next view regenerates with current stock levels.
+        await invalidateRecommendationsForProduct(inventory.productId);
 
         res.status(200).json({
             success: true,

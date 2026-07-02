@@ -2,6 +2,7 @@
 import Product from "../models/Product.js"
 import Inventory from "../models/Inventory.js";
 import Recommendation from "../models/Recommendation.js";
+import { invalidateRecommendationsForProduct } from "./recommendationController.js";
 
 //Create Product on->  POST /api/products
 export const createProduct = async (req,res,next) =>{
@@ -73,6 +74,11 @@ export const updateProduct = async (req,res,next) => {
             res.status(404);
             throw new Error("Product not found");
         }
+
+        // Price, rating, or category may have changed — any cached
+        // recommendation involving this product (as source or target) is
+        // now stale, so clear it. The next view regenerates fresh scores.
+        await invalidateRecommendationsForProduct(product._id);
 
         res.status(200).json({
             success: true,
